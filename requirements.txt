@@ -1,11 +1,6 @@
-fastapi
-uvicorn
+streamlit
 groq
 python-dotenv
-streamlit
-fastapi
-uvicorn
-groq
-python-dotenv
-streamlit
+langchain
 langchain-community
+faiss-cpu
