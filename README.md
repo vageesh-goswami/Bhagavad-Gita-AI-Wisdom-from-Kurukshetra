@@ -11,9 +11,10 @@ A spiritual AI chatbot that extracts and delivers profound wisdom from the sacre
 - ✨ Ask any spiritual or life-related question
 - 📚 Get answers based on Bhagavad Gita verses
 - 🌐 Multiple interfaces: Web UI (Streamlit), CLI, and REST API
-- 🧠 Runs locally with Ollama (Mistral model)
+- 🧠 Runs locally with Ollama (Mistral model) OR with OpenAI
 - 🔌 REST API for integration with other applications
-- 💻 No external API keys required
+- 🔑 Flexible: Use your own OpenAI API key or run completely locally
+- 💻 No external API keys required (if using Ollama)
 
 ---
 
@@ -46,6 +47,8 @@ A spiritual AI chatbot that extracts and delivers profound wisdom from the sacre
 
 ### Prerequisites
 
+**Option 1: Using Ollama (Local, Free)**
+
 1. **Install Ollama**: Download and install Ollama from [ollama.ai](https://ollama.ai)
 
 2. **Pull required models**:
@@ -54,7 +57,24 @@ ollama pull mistral
 ollama pull nomic-embed-text
 ```
 
-3. **Install Python dependencies**:
+**Option 2: Using OpenAI (Cloud, Requires API Key)**
+
+1. **Get an OpenAI API key**: Sign up at [platform.openai.com](https://platform.openai.com/) and get your API key
+
+2. **Create a `.env` file** in the project root:
+```bash
+cp .env.example .env
+```
+
+3. **Edit the `.env` file** and add your OpenAI API key:
+```env
+OPENAI_API_KEY=your_actual_api_key_here
+LLM_PROVIDER=openai
+OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
+```
+
+**Install Python Dependencies (Required for both options)**:
 ```bash
 pip install -r requirements.txt
 ```
@@ -64,6 +84,8 @@ pip install -r requirements.txt
 ## 💻 Running the Application
 
 This project provides **three different ways** to interact with the Bhagavad Gita AI:
+
+> **Note:** All three interfaces support both Ollama (local) and OpenAI (cloud). The system automatically uses the provider specified in your `.env` file (defaults to Ollama if not specified).
 
 ### 1. Web UI (Streamlit) - Recommended for Interactive Use
 
@@ -139,13 +161,33 @@ Visit `http://localhost:8000/docs` for Swagger UI where you can test all endpoin
 
 ## 🛠️ Technical Stack
 
-- **LLM**: Ollama (Mistral model)
-- **Embeddings**: Nomic-embed-text
+- **LLM**: Ollama (Mistral model) OR OpenAI (GPT-3.5-turbo/GPT-4)
+- **Embeddings**: Nomic-embed-text (Ollama) OR OpenAI text-embedding-ada-002
 - **Vector Store**: FAISS
 - **Framework**: LangChain
 - **Web UI**: Streamlit
 - **API**: FastAPI
 - **Language**: Python 3.8+
+
+---
+
+## 🔧 Configuration
+
+The application uses environment variables for configuration. Create a `.env` file in the project root:
+
+```env
+# LLM Provider: "ollama" (default) or "openai"
+LLM_PROVIDER=ollama
+
+# OpenAI Configuration (only needed if LLM_PROVIDER=openai)
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_EMBEDDING_MODEL=text-embedding-ada-002
+```
+
+**To switch between providers:**
+- For local Ollama: Set `LLM_PROVIDER=ollama` (or omit it, as this is the default)
+- For OpenAI: Set `LLM_PROVIDER=openai` and provide your `OPENAI_API_KEY`
 
 ---
 

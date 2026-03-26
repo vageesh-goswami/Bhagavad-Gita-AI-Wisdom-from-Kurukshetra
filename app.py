@@ -4,10 +4,21 @@ from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings, OllamaLLM
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.chains import RetrievalQA
 import pathlib
+from dotenv import load_dotenv
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+# Load environment variables
+load_dotenv()
+
+# Get configuration from environment
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama").lower()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
 
 def set_background(image_file):
     import base64
@@ -39,10 +50,28 @@ def load_qa_chain():
     docs = loader.load()
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
     split_docs = splitter.split_documents(docs)
-    embeddings = OllamaEmbeddings(model="nomic-embed-text")
+
+    # Initialize embeddings and LLM based on provider
+    if LLM_PROVIDER == "openai":
+        if not OPENAI_API_KEY:
+            st.error("OPENAI_API_KEY not found in .env file. Please set it to use OpenAI provider.")
+            st.stop()
+
+        embeddings = OpenAIEmbeddings(
+            openai_api_key=OPENAI_API_KEY,
+            model=OPENAI_EMBEDDING_MODEL
+        )
+        llm = ChatOpenAI(
+            openai_api_key=OPENAI_API_KEY,
+            model=OPENAI_MODEL,
+            temperature=0.7
+        )
+    else:  # Default to Ollama
+        embeddings = OllamaEmbeddings(model="nomic-embed-text")
+        llm = OllamaLLM(model="mistral")
+
     db = FAISS.from_documents(split_docs, embeddings)
     retriever = db.as_retriever(search_kwargs={"k": 3})
-    llm = OllamaLLM(model="mistral")
     qa = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
     return qa
 
@@ -110,6 +139,14 @@ st.markdown(
     '<p class="project-subtitle">Ask questions about Dharma, Karma, Life & Duty - directly from the Gita</p>',
     unsafe_allow_html=True
 )
+
+# Display current provider info
+provider_text = f"🤖 Using: {LLM_PROVIDER.upper()}"
+if LLM_PROVIDER == "openai":
+    provider_text += f" ({OPENAI_MODEL})"
+else:
+    provider_text += " (Mistral)"
+st.markdown(f'<p style="text-align: center; color: #ffd700; font-size: 0.9rem;">{provider_text}</p>', unsafe_allow_html=True)
 
 query = st.text_input("Ask your question to Lord Krishna", placeholder="e.g. What is true duty according to the Gita?")
 
