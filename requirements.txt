@@ -3,3 +3,9 @@ uvicorn
 groq
 python-dotenv
 streamlit
+fastapi
+uvicorn
+groq
+python-dotenv
+streamlit
+langchain-community
