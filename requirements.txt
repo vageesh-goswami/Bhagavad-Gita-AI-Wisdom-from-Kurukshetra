@@ -1,0 +1,16 @@
+# Core dependencies
+langchain
+langchain-community
+langchain-ollama
+faiss-cpu
+
+# For Streamlit UI (app.py)
+streamlit
+
+# For FastAPI (api.py)
+fastapi
+uvicorn[standard]
+pydantic
+
+# Other dependencies
+python-dotenv
