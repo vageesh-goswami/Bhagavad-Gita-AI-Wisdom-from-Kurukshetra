@@ -3,6 +3,8 @@ langchain
 langchain-community
 langchain-ollama
 langchain-openai
+langchain-google-genai
+langchain-anthropic
 faiss-cpu
 
 # For Streamlit UI (app.py)
