@@ -4,3 +4,5 @@ python-dotenv
 langchain
 langchain-community
 faiss-cpu
+langchain-huggingface
+langchain-groq==0.3.8

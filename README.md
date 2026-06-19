@@ -32,15 +32,39 @@ The app now supports **two modes**:
 - 🧠 Fully local LLM inference via **Ollama** (Mistral model)
 - ☁️ Cloud inference via **Groq API** (LLaMA 3, Mixtral, Gemma2)
 - 🔍 Semantic search using **FAISS** vector store
-- 🎨 Beautiful Streamlit UI with custom battlefield background & Devanagari font
+- 💬 **Context Memory Window** — the AI remembers your last N turns for multi-turn conversations
+- 🗑️ Clear Chat button — reset conversation memory anytime
+- 🎨 Chat bubble UI with beautiful Kurukshetra battlefield background
 - ⚡ Cached QA chain for fast repeated queries
 - ❌ Graceful error handling with helpful messages
 
 ---
 
-## 🔑 API Key Feature (New!)
+## 🧠 Context Memory Window (New!)
 
-You can now run this project **without installing Ollama** by using your own **Groq API key**.
+The AI now **remembers your conversation**! Each question you ask is aware of what you previously discussed.
+
+### How it works:
+- The sidebar has a **"Remember last N turns"** slider (default: 5)
+- Every new question is sent along with the last N question-answer pairs
+- The AI can answer follow-up questions like *"Tell me more"* or *"How do I apply it?"* correctly
+- Use **🗑️ Clear Chat History** to start a fresh conversation
+
+```
+Without Memory:              With Memory Window (k=5):
+─────────────────            ─────────────────────────────────
+You: What is Karma?          [History] You: What is Karma?
+AI:  Karma is action...      [History] AI:  Karma is action...
+                             You: How do I apply it?
+You: How do I apply it?  ►  AI: ✅ Knows "it" = Karma!
+AI:  ??? (no context!)       
+```
+
+---
+
+## 🔑 API Key Feature
+
+You can run this project **without installing Ollama** by using your own **Groq API key**.
 
 ### How it works:
 1. Open the app sidebar
