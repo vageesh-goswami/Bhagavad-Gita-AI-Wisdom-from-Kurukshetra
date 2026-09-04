@@ -1,8 +1,9 @@
-streamlit
-groq
-python-dotenv
-langchain
-langchain-community
-faiss-cpu
-langchain-huggingface
-langchain-groq==0.3.8
+streamlit==1.63.0
+python-dotenv==1.2.3
+numpy>=1.26,<3.0
+faiss-cpu==1.15.0
+sentence-transformers==6.0.1
+langchain-core>=1.1,<2.0
+langchain-text-splitters==1.1.2
+langchain-groq==1.1.3
+langchain-ollama==1.1.0

@@ -1,41 +1,58 @@
+"""Command-line client that reuses the same RAG service as the Streamlit app."""
+
+from __future__ import annotations
+
+import argparse
+import getpass
 import os
 
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+from dotenv import load_dotenv
 
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings, OllamaLLM
-from langchain.chains import RetrievalQA
-import pathlib
+from core.config import DEFAULT_GROQ_MODEL, DEFAULT_OLLAMA_CHAT_MODEL
+from core.rag_service import answer_question, build_knowledge_base
 
-BASE_DIR = pathlib.Path(__file__).parent
 
-print("Loading Bhagavad Gita text...")
-loader = TextLoader(str(BASE_DIR / "gita2.txt"), encoding="utf-8")
-doc = loader.load()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Ask a grounded Bhagavad Gita question")
+    parser.add_argument("question", help="Question to ask")
+    parser.add_argument("--mode", choices=("groq", "ollama"), default="groq")
+    parser.add_argument("--model", help="Override the default generation model")
+    parser.add_argument("--top-k", type=int, default=4)
+    return parser.parse_args()
 
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
-docs = text_splitter.split_documents(doc)
 
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
-db = FAISS.from_documents(docs, embeddings)
+def main() -> None:
+    load_dotenv()
+    args = parse_args()
 
-retriever = db.as_retriever(search_kwargs={"k": 3})
+    if args.mode == "groq":
+        api_key = os.getenv("GROQ_API_KEY", "").strip()
+        if not api_key:
+            api_key = getpass.getpass("Groq API key: ").strip()
+        embedding_mode = "sentence-transformer"
+        model_name = args.model or DEFAULT_GROQ_MODEL
+    else:
+        api_key = None
+        embedding_mode = "ollama"
+        model_name = args.model or DEFAULT_OLLAMA_CHAT_MODEL
 
-llm = OllamaLLM(model="mistral")
+    knowledge_base = build_knowledge_base(embedding_mode)  # type: ignore[arg-type]
+    result = answer_question(
+        question=args.question,
+        history=[],
+        memory_window=1,
+        knowledge_base=knowledge_base,
+        generation_mode=args.mode,
+        model_name=model_name,
+        api_key=api_key,
+        top_k=args.top_k,
+    )
 
-qa = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
+    print("\n" + result.answer)
+    print("\nRetrieved sources:")
+    for passage in result.sources:
+        print(f"- {passage.reference} (similarity={passage.score:.3f})")
 
-print("\nWelcome to the Bhagavad Gita AI Bot")
-print("Ask any question about life, karma, duty, or Gita's teachings.")
-print("Type 'exit' to quit.\n")
 
-while True:
-    query = input("Ask a question from Gita (or type 'exit'): ")
-    if query.lower() == "exit":
-        print("Thank you for using our bot")
-        break
-    result = qa.invoke(query)
-    print("\nAnswer:", result["result"])
-    print("\n" + "--" * 50)
+if __name__ == "__main__":
+    main()

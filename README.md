@@ -1,249 +1,213 @@
-# Bhagavad Gita AI — Wisdom from Kurukshetra 🕉️🤖
+# Bhagavad Gita AI — Dual-Mode Multilingual RAG Assistant
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-UI-red?style=flat-square&logo=streamlit)
-![LangChain](https://img.shields.io/badge/LangChain-RAG-green?style=flat-square)
-![Ollama](https://img.shields.io/badge/Ollama-Local%20LLM-purple?style=flat-square)
-![Groq](https://img.shields.io/badge/Groq-Cloud%20API-orange?style=flat-square)
-![FAISS](https://img.shields.io/badge/FAISS-Vector%20Store-yellow?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square)
+A source-grounded conversational assistant that retrieves relevant Bhagavad Gita
+passages before generating a response. The app supports fast cloud generation with
+Groq and fully local generation with Ollama.
 
-> A spiritual AI chatbot that answers your questions on Dharma, Karma, Life & Duty — powered by the sacred wisdom of the **Bhagavad Gita**. Supports both **local Ollama** and **cloud Groq API** modes.
+> This repository is an educational software project, not a substitute for a verified
+> critical edition, qualified spiritual teacher, or professional mental-health advice.
 
-![App Screenshot](Copilot_20250726_004311.png)
+## What the project demonstrates
 
----
+- Retrieval-augmented generation rather than an ungrounded API call
+- Direct FAISS cosine-similarity search over dense embeddings
+- Cloud and local model-provider selection behind one service interface
+- Bounded conversation memory to prevent unlimited prompt growth
+- Visible retrieved evidence and similarity scores for every answer
+- Secure API-key loading from environment variables
+- Reusable core logic shared by Streamlit and a command-line client
+- Unit tests, defensive validation, CI configuration, and clean repository structure
 
-## 📖 About the Project
+## Architecture
 
-**Bhagavad Gita AI** bridges ancient Vedic philosophy with modern generative AI. Ask any life question — about duty, purpose, fear, or action — and receive guidance rooted directly in the Gita’s verses.
-
-The app now supports **two modes**:
-- **🖥️ Local Mode** — Runs 100% offline using Ollama (Mistral LLM + nomic-embed-text embeddings). No API key needed.
-- **☁️ Cloud Mode** — Enter your own **Groq API key** and use powerful cloud LLMs (LLaMA 3, Mixtral, Gemma) without installing anything locally.
-
----
-
-## ✨ Features
-
-- 🙏 Ask any spiritual, philosophical, or life-related question
-- 📚 Answers grounded in actual Bhagavad Gita verses (RAG pipeline)
-- 🔑 **User-provided Groq API key** — enter your key in the sidebar, no `.env` file needed
-- 🧠 Fully local LLM inference via **Ollama** (Mistral model)
-- ☁️ Cloud inference via **Groq API** (LLaMA 3, Mixtral, Gemma2)
-- 🔍 Semantic search using **FAISS** vector store
-- 💬 **Context Memory Window** — the AI remembers your last N turns for multi-turn conversations
-- 🗑️ Clear Chat button — reset conversation memory anytime
-- 🎨 Chat bubble UI with beautiful Kurukshetra battlefield background
-- ⚡ Cached QA chain for fast repeated queries
-- ❌ Graceful error handling with helpful messages
-
----
-
-## 🧠 Context Memory Window (New!)
-
-The AI now **remembers your conversation**! Each question you ask is aware of what you previously discussed.
-
-### How it works:
-- The sidebar has a **"Remember last N turns"** slider (default: 5)
-- Every new question is sent along with the last N question-answer pairs
-- The AI can answer follow-up questions like *"Tell me more"* or *"How do I apply it?"* correctly
-- Use **🗑️ Clear Chat History** to start a fresh conversation
-
-```
-Without Memory:              With Memory Window (k=5):
-─────────────────            ─────────────────────────────────
-You: What is Karma?          [History] You: What is Karma?
-AI:  Karma is action...      [History] AI:  Karma is action...
-                             You: How do I apply it?
-You: How do I apply it?  ►  AI: ✅ Knows "it" = Karma!
-AI:  ??? (no context!)       
+```text
+User question
+     │
+     ▼
+Streamlit chat interface
+     │
+     ├── Cloud mode ── SentenceTransformer embeddings
+     │                  + Groq chat generation
+     │
+     └── Local mode ── Ollama embeddings
+                        + Ollama chat generation
+     │
+     ▼
+Curated Gita text → chunking → dense vectors → FAISS index
+     │
+     ▼
+Top-k passages + bounded chat history + grounded prompt
+     │
+     ▼
+Multilingual answer + displayed retrieval evidence
 ```
 
----
+## Repository structure
 
-## 🔑 API Key Feature
-
-You can run this project **without installing Ollama** by using your own **Groq API key**.
-
-### How it works:
-1. Open the app sidebar
-2. Select **☁️ Cloud (Groq API)** mode
-3. Paste your Groq API key (starts with `gsk_`)
-4. Choose a model (LLaMA 3, Mixtral, Gemma2, etc.)
-5. Ask your question!
-
-> Your API key is **never stored** — it only lives in your browser session and is sent directly to Groq.
-
-### Get a FREE Groq API Key:
-1. Visit [console.groq.com](https://console.groq.com)
-2. Sign up for free
-3. Create a new API key
-4. Paste it in the sidebar
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Local Mode | Cloud Mode |
-|---|---|---|
-| **Frontend / UI** | Streamlit | Streamlit |
-| **LLM** | Ollama (Mistral) | Groq (LLaMA 3 / Mixtral / Gemma2) |
-| **Embeddings** | Ollama (nomic-embed-text) | HuggingFace (all-MiniLM-L6-v2) |
-| **Vector Store** | FAISS | FAISS |
-| **RAG Framework** | LangChain (RetrievalQA) | LangChain (RetrievalQA) |
-| **Language** | Python 3.10+ | Python 3.10+ |
-
----
-
-## 📂 File Structure
-
-```
-Bhagavad-Gita-AI-Wisdom-from-Kurukshetra/
-│
-├── app.py                          # Main Streamlit app (UI + dual-mode RAG pipeline)
-├── answer_bot.py                   # Core RAG logic (CLI version)
-├── gita.txt                        # Bhagavad Gita text (source 1)
-├── gita2.txt                       # Bhagavad Gita text (source 2, used for embeddings)
-├── battlefield-of-kurushreta.jpg   # Background image asset
-├── Copilot_20250726_004311.png     # App screenshot / background
-└── README.md                       # Project documentation
+```text
+.
+├── app.py                         # Streamlit UI and session orchestration
+├── answer_bot.py                  # Reusable command-line client
+├── core/
+│   ├── config.py                  # Models, paths, and retrieval parameters
+│   ├── prompts.py                 # Grounded prompt and memory formatting
+│   ├── rag_service.py             # Embeddings, direct FAISS search, generation
+│   └── styles.py                  # Compact Streamlit presentation theme
+├── data/
+│   ├── gita_knowledge_base.txt    # Curated multilingual demonstration corpus
+│   └── README.md                  # Corpus limitations and replacement guidance
+├── tests/                         # Dependency-light unit tests
+├── scripts/                       # Windows and Unix setup helpers
+├── .github/workflows/tests.yml    # Compile and unit-test workflow
+├── .env.example
+├── requirements.txt
+├── requirements-dev.txt
+└── TROUBLESHOOTING.md
 ```
 
----
+## Recommended setup: Windows PowerShell
 
-## 🚀 Getting Started
+Use 64-bit Python 3.11 for the most predictable setup.
 
-### Prerequisites
-
-- Python 3.10 or higher
-- For **Local mode**: [Ollama](https://ollama.com/) installed and running
-- For **Cloud mode**: A free [Groq API key](https://console.groq.com)
-
-### 1. Clone the Repository
-
-```bash
+```powershell
 git clone https://github.com/vageesh-goswami/Bhagavad-Gita-AI-Wisdom-from-Kurukshetra.git
 cd Bhagavad-Gita-AI-Wisdom-from-Kurukshetra
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\setup_windows.ps1
 ```
 
-### 2. Install Dependencies
+Open `.env` and replace the placeholder with your own Groq API key:
+
+```env
+GROQ_API_KEY=replace-me
+```
+
+Run the app:
+
+```powershell
+.\scripts\run_windows.ps1
+```
+
+Or run it manually:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py
+```
+
+## Manual setup
 
 ```bash
-pip install streamlit langchain langchain-community langchain-ollama langchain-groq faiss-cpu sentence-transformers
+python -m venv .venv
 ```
 
-### 3a. Local Mode — Pull Ollama Models
+Activate it:
+
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+```
+
+```bash
+# macOS or Linux
+source .venv/bin/activate
+```
+
+Install and verify:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python -m compileall -q app.py answer_bot.py core tests
+python -m pytest
+python -m streamlit run app.py
+```
+
+## Cloud mode
+
+Cloud mode uses a local multilingual sentence-transformer for retrieval and Groq for
+answer generation. Keep your key in `.env`; `.gitignore` prevents that file from being
+committed.
+
+The first question may be slower because the embedding model is downloaded and the
+index is built. Ask one question before recording your Loom demonstration so the index
+is already cached.
+
+## Fully local Ollama mode
+
+Install and start Ollama, then pull the two required models:
 
 ```bash
 ollama pull mistral
 ollama pull nomic-embed-text
+ollama list
 ```
 
-### 3b. Cloud Mode — Get Groq API Key
+Select **Local — Ollama** in the sidebar. No cloud API key is used in this mode.
 
-```
-1. Go to https://console.groq.com
-2. Sign up for free
-3. Create an API key
-4. Paste it in the app sidebar
-```
-
-### 4. Run the App
+## Command-line use
 
 ```bash
-streamlit run app.py
+python answer_bot.py "How should I focus on effort instead of results?"
 ```
 
-Open your browser at `http://localhost:8501` and choose your mode from the sidebar.
-
----
-
-## 🧠 How It Works
-
-```
-User Question
-     │
-     ▼
-[ Streamlit UI + Sidebar Mode Selector ]
-     │
-     ┬─────────────────────────────────────┤
-     │ Local Mode                  Cloud Mode │
-     ▼                                        ▼
-[OllamaEmbeddings]              [HuggingFaceEmbeddings]
-[nomic-embed-text]              [all-MiniLM-L6-v2]
-     │                                        │
-     ▼                                        ▼
-         [ FAISS Vector DB (gita2.txt) ]
-                       │
-                       ▼
-            [ Retriever (top-3 chunks) ]
-                       │
-          ┬─────────────────────┤
-          │ Local               Cloud │
-          ▼                           ▼
-    [OllamaLLM]            [ChatGroq + User API Key]
-     (Mistral)           (llama3 / mixtral / gemma2)
-          │                           │
-          └───────▼───────┘
-            Krishna's Wisdom
-```
-
----
-
-## 🧾 Use Cases
-
-| Who | Use Case |
-|---|---|
-| 👨‍🎓 Students | Seek guidance for life decisions & purpose |
-| 🧘 Spiritual Seekers | Get Gita-based answers to philosophical queries |
-| 💻 Developers | Learn RAG + LangChain through a meaningful project |
-| 🙏 Teachers | Create a classroom tool to teach Bhagavad Gita |
-| 💬 Everyone | Daily dose of divine knowledge |
-
----
-
-## 💬 Example Questions
-
-- *"What is true duty according to the Gita?"*
-- *"How should I deal with fear and anxiety?"*
-- *"What does Krishna say about action without desire?"*
-- *"What is the meaning of Karma Yoga?"*
-- *"How to attain inner peace?"*
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- Add OpenAI / Gemini API key support
-- Add multilingual support (Hindi, Sanskrit)
-- Integrate voice input/output
-- Improve the UI/UX
+Local mode:
 
 ```bash
-git checkout -b feature/your-feature-name
+python answer_bot.py --mode ollama "How can I control a distracted mind?"
 ```
 
----
+## Good demonstration questions
 
-## 📜 License
+1. `What does the Gita teach about focusing on action rather than results?`
+2. `How can I apply this before a software engineering interview?`
 
-This project is licensed under the **MIT License**.
+The second question demonstrates bounded conversational memory. Expand **Retrieved
+passages used for this answer** to show that the response was grounded in actual indexed
+text rather than generated without evidence.
 
----
+## Design decisions worth explaining in an interview
 
-## 🙏 Acknowledgements
+### Direct FAISS integration
 
-- The sacred text of the **Bhagavad Gita**
-- [LangChain](https://github.com/langchain-ai/langchain) for the RAG framework
-- [Ollama](https://ollama.com/) for local LLM serving
-- [Groq](https://groq.com/) for blazing-fast cloud inference
-- [Streamlit](https://streamlit.io/) for the web UI framework
-- [FAISS](https://github.com/facebookresearch/faiss) by Meta AI for vector search
+The project normalises document and query vectors and uses `IndexFlatIP`. Inner product
+between normalised vectors is cosine similarity. This makes the retrieval logic explicit
+and avoids hiding it behind a large wrapper.
 
----
+### Two embedding backends behind one interface
 
-<p align="center">
-  Made with 🙏 and 🤖 by <a href="https://github.com/vageesh-goswami">Vageesh Goswami</a>
-</p>
+Both SentenceTransformer and Ollama expose `embed_documents` and `embed_query` through
+a small protocol. The FAISS index therefore does not need provider-specific logic.
+
+### Bounded memory
+
+Only the latest configured number of completed user-assistant pairs are inserted into
+the prompt. This prevents history from growing indefinitely and keeps behaviour easy to
+reason about.
+
+### Evidence visibility
+
+The interface displays the exact retrieved passages and similarity scores. This helps
+with debugging and makes grounding inspectable during a code walkthrough.
+
+## Honest limitations
+
+- The bundled corpus is curated and compact, not the complete 700-verse scripture.
+- Similarity retrieval does not guarantee the ideal theological passage for every query.
+- Generated explanations still require evaluation for faithfulness and translation quality.
+- The FAISS index is rebuilt per server process rather than persisted to disk.
+- The application has unit tests for deterministic logic but not a full model-output eval suite.
+
+## Suggested next improvements
+
+- Replace the demonstration corpus with a verified edition and detailed source metadata.
+- Add retrieval test cases with expected verse references.
+- Add an LLM faithfulness evaluator and human review rubric.
+- Persist the FAISS index with a content hash and rebuild only when the corpus changes.
+- Add Hindi/Sanskrit query benchmarks and citation validation.
+
+## Licence
+
+Application code is released under the MIT Licence. Review the rights and attribution
+requirements of any full scripture edition or translation before adding it to the project.
